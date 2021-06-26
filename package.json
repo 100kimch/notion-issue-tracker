@@ -32,8 +32,82 @@
 			{
 				"title": "NotionIssueTracker: Disable Codelens",
 				"command": "notion-issue-tracker.disableCodeLens"
+			},
+			{
+				"title": "NotionIssueTracker: Check Health",
+				"command": "notion-issue-tracker.checkHealth"
+			},
+			{
+				"title": "NotionIssueTracker: Add Issue",
+				"command": "notion-issue-tracker.addIssue"
 			}
-		]
+		],
+		"configuration": {
+            "title": "Notion Issue Tracker configuration",
+            "properties": {
+                "notion-issue-tracker.multilineComments": {
+                    "type": "boolean",
+                    "description": "Whether the multiline comment highlighter should be active",
+                    "default": true
+                },
+                "notion-issue-tracker.highlightPlainText": {
+                    "type": "boolean",
+                    "description": "Whether the plaintext comment highlighter should be active",
+                    "default": false
+                },
+                "notion-issue-tracker.tags": {
+                    "type": "array",
+                    "description": "Tags which are used to color the comments. Changes require a restart of VS Code to take effect",
+                    "default": [
+                        {
+                            "tag": "!",
+                            "color": "#FF2D00",
+                            "strikethrough": false,
+                            "underline": false,
+                            "backgroundColor": "transparent",
+                            "bold": false,
+                            "italic": false
+                        },
+                        {
+                            "tag": "?",
+                            "color": "#3498DB",
+                            "strikethrough": false,
+                            "underline": false,
+                            "backgroundColor": "transparent",
+                            "bold": false,
+                            "italic": false
+                        },
+                        {
+                            "tag": "//",
+                            "color": "#474747",
+                            "strikethrough": true,
+                            "underline": false,
+                            "backgroundColor": "transparent",
+                            "bold": false,
+                            "italic": false
+                        },
+                        {
+                            "tag": "todo",
+                            "color": "#FF8C00",
+                            "strikethrough": false,
+                            "underline": false,
+                            "backgroundColor": "transparent",
+                            "bold": false,
+                            "italic": false
+                        },
+                        {
+                            "tag": "*",
+                            "color": "#98C379",
+                            "strikethrough": false,
+                            "underline": false,
+                            "backgroundColor": "transparent",
+                            "bold": false,
+                            "italic": false
+                        }
+                    ]
+                }
+			}
+		}
 	},
 	"scripts": {
 		"vscode:prepublish": "yarn run package",

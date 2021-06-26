@@ -6,6 +6,7 @@ import {
   ExtensionContext,
   languages,
   MarkdownString,
+  SnippetString,
   TextEditor,
   window,
   workspace,
@@ -14,32 +15,35 @@ import {
 import * as API from './apis';
 import { CodeLensProvider } from './utils/CodeLensProvider';
 import { Parser } from './utils/CommentParser';
+import { IssueParser } from './utils/IssueParser';
 
 export function activate(context: ExtensionContext) {
   const output = window.createOutputChannel('Notion Issue Tracker');
   const codelensProvider = new CodeLensProvider();
   const parser = new Parser();
 
+  let activeEditor: TextEditor;
+  let timeout: NodeJS.Timer;
+
   output.appendLine(
     'Notion Issue Tracker\n\tv0.1.0\n\thttps://github.com/100kimch/notion-issue-tracker',
   );
-  let activeEditor: TextEditor;
 
-  let updateDecorations = function (useHash = false) {
+  const getTags = () => {
     if (!activeEditor) return;
     if (!parser.supportedLanguage) return;
 
-    // Finds the single line comments using the language comment delimiter
-    parser.FindSingleLineComments(activeEditor);
+    console.log('getTags() executed');
+  };
 
-    // Finds the multi line comments using the language comment delimiter
-    parser.FindBlockComments(activeEditor);
-
-    // Finds the jsdoc comments
-    parser.FindJSDocComments(activeEditor);
-
-    // Apply the styles set in the package.json
-    parser.ApplyDecorations(activeEditor);
+  // * IMPORTANT:
+  // To avoid calling update too often,
+  // set a timer for 200ms to wait before updating decorations
+  const triggerGetTags = () => {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+    timeout = setTimeout(getTags, 200);
   };
 
   // Get the active editor for the first time and initialise the regex
@@ -50,59 +54,33 @@ export function activate(context: ExtensionContext) {
     parser.SetRegex(activeEditor.document.languageId);
 
     // Trigger first update of decorators
-    triggerUpdateDecorations();
+    triggerGetTags();
   }
 
-  // * Handle active file changed
-  window.onDidChangeActiveTextEditor(
-    (editor) => {
-      if (editor) {
-        activeEditor = editor;
+  window.onDidChangeActiveTextEditor((editor) => {
+    console.log('editor changed', editor);
 
-        // Set regex for updated language
-        parser.SetRegex(editor.document.languageId);
+    if (editor) {
+      activeEditor = editor;
 
-        // Trigger update to set decorations for newly active file
-        triggerUpdateDecorations();
-      }
-    },
-    null,
-    context.subscriptions,
-  );
+      // Set regex for updated language
+      parser.SetRegex(editor.document.languageId);
 
-  // * Handle file contents changed
+      // Trigger update to set decorations for newly active file
+      triggerGetTags();
+    }
+  });
+
   workspace.onDidChangeTextDocument(
     (event) => {
-      // Trigger updates if the text was changed in the same document
+      console.log('changing...', event.document);
       if (activeEditor && event.document === activeEditor.document) {
-        triggerUpdateDecorations();
+        console.log('done');
+        triggerGetTags();
       }
     },
     null,
     context.subscriptions,
-  );
-
-  // * IMPORTANT:
-  // To avoid calling update too often,
-  // set a timer for 200ms to wait before updating decorations
-  var timeout: NodeJS.Timer;
-  function triggerUpdateDecorations() {
-    if (timeout) {
-      clearTimeout(timeout);
-    }
-    timeout = setTimeout(updateDecorations, 200);
-  }
-
-  context.subscriptions.push(
-    commands.registerCommand('notion-issue-tracker.helloWorld', async () => {
-      // The code you place here will be executed every time your command is executed
-
-      await API.Notion.sayHello(500);
-      console.log('Running Complete!');
-
-      // Display a message box to the user
-      window.showInformationMessage('Hello World from Notion Issue Tracker!');
-    }),
   );
 
   context.subscriptions.push(
@@ -114,7 +92,20 @@ export function activate(context: ExtensionContext) {
           const linePrefix = document
             .lineAt(position)
             .text.substr(0, position.character);
-          console.log('text: ', linePrefix);
+
+          const snippetCompletion = new CompletionItem('Notion');
+          snippetCompletion.insertText = new SnippetString(
+            '// ${1|TODO,NOTE,SHOULD,MUST|} It is ${1}, right?',
+          );
+          snippetCompletion.command = {
+            command: 'notion-issue-tracker.helloWorld',
+            title: 'Re-trigger completions...',
+          };
+          snippetCompletion.documentation = new MarkdownString(
+            'Inserts a snippet that lets you select the _appropriate_ part of the day for your greeting.',
+          );
+
+          ret.push(snippetCompletion);
 
           const commitCharacterCompletion = new CompletionItem('americano');
           commitCharacterCompletion.commitCharacters = ['.'];
@@ -142,8 +133,6 @@ export function activate(context: ExtensionContext) {
           //   return undefined;
           // }
 
-          console.log('working...');
-
           return ret;
         },
       },
@@ -153,32 +142,53 @@ export function activate(context: ExtensionContext) {
 
   languages.registerCodeLensProvider('*', codelensProvider);
 
-  commands.registerCommand('notion-issue-tracker.enableCodeLens', () => {
-    workspace
-      .getConfiguration('notion-issue-tracker')
-      .update('enableCodeLens', true, true);
-  });
+  context.subscriptions.push(
+    ...[
+      commands.registerCommand('notion-issue-tracker.helloWorld', async () => {
+        // The code you place here will be executed every time your command is executed
 
-  commands.registerCommand('notion-issue-tracker.disableCodeLens', () => {
-    workspace
-      .getConfiguration('notion-issue-tracker')
-      .update('enableCodeLens', false, true);
-  });
+        await API.Notion.sayHello(500);
+        console.log('Running Complete!');
 
-  commands.registerCommand(
-    'notion-issue-tracker.codelensAction',
-    (args: any) => {
-      window.showInformationMessage(
-        `CodeLens action clicked with args=${args}`,
-      );
-    },
-  );
+        // Display a message box to the user
+        window.showInformationMessage('Hello World from Notion Issue Tracker!');
+      }),
 
-  commands.registerCommand(
-    'notion-issue-tracker.checkHealth',
-    async (args: any) => {
-      window.showInformationMessage(await API.Notion.getDatabase());
-    },
+      commands.registerCommand('notion-issue-tracker.enableCodeLens', () => {
+        workspace
+          .getConfiguration('notion-issue-tracker')
+          .update('enableCodeLens', true, true);
+      }),
+
+      commands.registerCommand('notion-issue-tracker.disableCodeLens', () => {
+        workspace
+          .getConfiguration('notion-issue-tracker')
+          .update('enableCodeLens', false, true);
+      }),
+
+      commands.registerCommand(
+        'notion-issue-tracker.codelensAction',
+        (args: any) => {
+          window.showInformationMessage(
+            `CodeLens action clicked with args=${args}`,
+          );
+        },
+      ),
+
+      commands.registerCommand(
+        'notion-issue-tracker.checkHealth',
+        async (args: any) => {
+          window.showInformationMessage(await API.Notion.postDatabase());
+        },
+      ),
+
+      commands.registerCommand(
+        'notion-issue-tracker.addIssue',
+        async (args: any) => {
+          window.showInformationMessage(IssueParser.getContext());
+        },
+      ),
+    ],
   );
 }
 

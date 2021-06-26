@@ -1,3 +1,4 @@
+// This code belongs to aaron-bond/better-comments.git (b0ede0b0fa9cd87afb2aca9fbb04136d57537688)
 import * as vscode from 'vscode';
 
 interface CommentTag {
@@ -47,11 +48,16 @@ export class Parser {
 
   // Read from the package.json
   private contributions: Contributions = vscode.workspace.getConfiguration(
-    'better-comments',
+    'notion-issue-tracker',
   ) as any;
 
   public constructor() {
     this.setTags();
+  }
+
+  public getTags(): CommentTag[] {
+    console.log('tag: ', this.tags);
+    return this.tags;
   }
 
   /**
@@ -442,6 +448,7 @@ export class Parser {
    */
   private setTags(): void {
     let items = this.contributions.tags;
+    console.log('items: ', items);
     for (let item of items) {
       let options: vscode.DecorationRenderOptions = {
         color: item.color,

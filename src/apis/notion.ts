@@ -2,6 +2,8 @@ import Axios from 'axios';
 
 import { notion } from '../config';
 
+import type { Notion } from '../models/notion';
+
 export default {
   sayHello: async (delay = 1000) =>
     await new Promise((resolve) => {
@@ -23,7 +25,7 @@ export default {
       console.log('[notion] getDatabase() result: ', a);
       resolve(JSON.stringify(a.data));
     }),
-  postDatabase: async (): Promise<string> =>
+  postPage: async (): Promise<string> =>
     await new Promise(async (resolve, reject) => {
       try {
         const a = await Axios.post(

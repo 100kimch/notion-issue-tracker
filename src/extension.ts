@@ -73,15 +73,21 @@ export function activate(context: ExtensionContext) {
 
   workspace.onDidChangeTextDocument(
     (event) => {
-      console.log('changing...', event.document);
       if (activeEditor && event.document === activeEditor.document) {
-        console.log('done');
+        console.log('changing...', new Date().getTime(), event.document);
         triggerGetTags();
       }
     },
     null,
     context.subscriptions,
   );
+
+  workspace.onDidSaveTextDocument(async (document) => {
+    console.log(
+      'final result: ',
+      await IssueParser.create(IssueParser.parseTags(document)),
+    );
+  });
 
   context.subscriptions.push(
     languages.registerCompletionItemProvider(
@@ -178,7 +184,7 @@ export function activate(context: ExtensionContext) {
       commands.registerCommand(
         'notion-issue-tracker.checkHealth',
         async (args: any) => {
-          window.showInformationMessage(await API.Notion.postDatabase());
+          window.showInformationMessage(await API.Notion.postPage());
         },
       ),
 

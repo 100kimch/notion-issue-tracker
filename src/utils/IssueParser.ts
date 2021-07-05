@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
 
 import * as API from '../apis';
-import { Tag } from '../models/custom';
+import { CustomIssue, Tag } from '../models/custom';
+import { Notion } from '../models/notion';
 
 export class IssueParser {
   static prefixes = [
@@ -42,6 +43,12 @@ export class IssueParser {
     } else {
       return [];
     }
+  }
+
+  public static parseCustomIssue(
+    response: Notion.Page.Response<CustomIssue.Response>,
+  ) {
+    return;
   }
 
   public static getContext(): string {
@@ -93,7 +100,8 @@ export class IssueParser {
 
       if (editor && idPosition) {
         try {
-          resolve(await API.Notion.postPage());
+          resolve('done');
+          // resolve(await API.Notion.postPage());
         } catch (e) {
           reject(e);
         }
@@ -107,7 +115,8 @@ export class IssueParser {
     return new Promise(async (resolve, reject) => {
       tags.forEach(async (tag) => {
         try {
-          resolve(await API.Notion.postPage());
+          resolve('done');
+          // resolve(await API.Notion.postPage());
         } catch (e) {
           reject(e);
         }

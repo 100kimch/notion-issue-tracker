@@ -184,7 +184,7 @@ export function activate(context: ExtensionContext) {
       commands.registerCommand(
         'notion-issue-tracker.checkHealth',
         async (args: any) => {
-          window.showInformationMessage(await API.Notion.postPage());
+          window.showInformationMessage('Health check.');
         },
       ),
 

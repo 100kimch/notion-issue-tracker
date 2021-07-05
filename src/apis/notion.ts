@@ -3,6 +3,7 @@ import Axios from 'axios';
 import { notion } from '../config';
 
 import type { Notion } from '../models/notion';
+import type { CustomIssue } from '../models/custom';
 
 export default {
   sayHello: async (delay = 1000) =>
@@ -25,7 +26,23 @@ export default {
       console.log('[notion] getDatabase() result: ', a);
       resolve(JSON.stringify(a.data));
     }),
-  postPage: async (): Promise<string> =>
+  postPage: async (request: CustomIssue.Request): Promise<string> =>
+    await new Promise(async (resolve, reject) => {
+      try {
+        resolve(
+          await Axios.post(notion.url + '/pages/', request, {
+            headers: {
+              Authorization: notion.authorization,
+              'Content-Type': 'application/json',
+              'Notion-Version': notion.version,
+            },
+          }),
+        );
+      } catch (e) {
+        reject(e);
+      }
+    }),
+  postPageOld: async (): Promise<string> =>
     await new Promise(async (resolve, reject) => {
       try {
         const a = await Axios.post(

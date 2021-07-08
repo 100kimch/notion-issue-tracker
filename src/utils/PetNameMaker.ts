@@ -3,35 +3,41 @@ import {
   breeds,
   colors,
   explainingBodies,
-  explaininglegs,
   names,
   sizes,
 } from '../constants';
 
+/**
+ * a class which makes a pet name with description for using an id.
+ * @constant lengths - [breeds, explainingBodies, colors, adjectives, sizes, names]
+ * @constant timeMask - sum of lengths
+ */
 export class PetNameMaker {
   private static mW = 123456789;
   private static mZ = 987654321;
   private static mask = 0xffffffff;
-  private static scope =
-    sizes.length *
-    adjectives.length *
-    colors.length *
-    explainingBodies.length *
-    explaininglegs.length *
-    breeds.length *
-    names.length;
-  private static sizes = [9, 25, 10, 3, 25, 3, 100];
+  private static lengths = [21, 3, 25, 25, 10, 500];
+  private static timeMask = 196875000;
 
   public static getName() {
-    let timeVal = new Date().getTime() >> 8;
-    console.log(timeVal, this.scope);
-    for (let i in this.sizes) {
-      console.log('val: ', timeVal % this.sizes[i]);
-      timeVal = timeVal / this.sizes[i];
-      console.log('sizes: ', this.sizes[i], timeVal);
+    const timeVal = Math.floor(new Date().getTime() / 1000) % this.timeMask;
+    const nums = [];
+    let selectedId;
+
+    this.seed(timeVal);
+    selectedId = Math.floor(this.random() * this.timeMask);
+
+    for (let i in this.lengths) {
+      nums.push(selectedId % this.lengths[i]);
+      selectedId = Math.floor(selectedId / this.lengths[i]);
     }
-    console.log('final: ', timeVal);
-    return new Date().getTime() / 10;
+
+    console.log('picked: ', nums);
+    return `${names[nums.pop()!]}, a${sizes[nums.pop()!]} ${
+      adjectives[nums.pop()!]
+    } ${colors[nums.pop()!]}${explainingBodies[nums.pop()!]} ${
+      breeds[nums.pop()!]
+    }`;
   }
 
   public static seed(i: number) {

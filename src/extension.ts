@@ -16,6 +16,7 @@ import * as API from './apis';
 import { CodeLensProvider } from './utils/CodeLensProvider';
 import { Parser } from './utils/CommentParser';
 import { IssueParser } from './utils/IssueParser';
+import { PetNameMaker } from './utils/PetNameMaker';
 
 export function activate(context: ExtensionContext) {
   const output = window.createOutputChannel('Notion Issue Tracker');
@@ -84,8 +85,9 @@ export function activate(context: ExtensionContext) {
 
   workspace.onDidSaveTextDocument(async (document) => {
     console.log(
-      'final result: ',
-      await IssueParser.create(IssueParser.parseTags(document)),
+      'final result:',
+      // await IssueParser.create(IssueParser.parseTags(document)),
+      PetNameMaker.getName(),
     );
   });
 

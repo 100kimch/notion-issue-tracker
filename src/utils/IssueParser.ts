@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 import * as API from '../apis';
-import { CustomIssue, Tag } from '../models/custom';
+import { CustomIssue, Issue, Tag } from '../models/custom';
 import { Notion } from '../models/notion';
 
 export class IssueParser {
@@ -12,7 +12,7 @@ export class IssueParser {
     ['note', /^\s*\/\/\s*NOTE\s*/i],
   ] as [string, RegExp][];
 
-  public static parseTags(document: vscode.TextDocument): Tag[] {
+  public static parseTags(document: vscode.TextDocument): Issue[] {
     if (
       document.languageId === 'typescript' &&
       document.uri.scheme === 'file'
@@ -22,14 +22,16 @@ export class IssueParser {
         .getText()
         .split('\n')
         .reduce((acc, cur, i) => {
-          let tag: Tag | null = null;
+          let tag: Issue | null = null;
           if (/^\s*\/\//.test(cur)) {
             this.prefixes.some((prefix) => {
               if (prefix[1].test(cur)) {
                 tag = {
+                  id: 'Hello',
+                  pageId: null,
                   lineNum: i + 1,
                   type: prefix[0],
-                  text: cur.replace(prefix[1], ''),
+                  description: cur.replace(prefix[1], ''),
                 };
                 return true;
               }
@@ -37,7 +39,7 @@ export class IssueParser {
             });
           }
           return tag ? acc.concat(tag) : acc;
-        }, [] as Tag[]);
+        }, [] as Issue[]);
       console.log('context: ', context);
       return context;
     } else {

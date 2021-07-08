@@ -1,13 +1,14 @@
 export const sizes = [
   '',
-  'small',
-  'little',
-  'tiny',
-  'big',
-  'large',
-  'huge',
-  'fat',
-  'thin',
+  ' small',
+  ' little',
+  ' tiny',
+  ' big',
+  ' large',
+  ' huge',
+  ' fat',
+  ' thin',
+  ' baby',
 ];
 
 export const adjectives = [
@@ -39,19 +40,28 @@ export const adjectives = [
 ];
 
 export const breeds = [
-  'labrador retriever',
+  'labrador',
   'bulldog',
-  'golden retriever',
+  'retriever',
   'beagle',
-  'irish setter',
-  'brussels griffon',
+  'maltese',
+  'harriers',
   'newfoundland',
-  'french bulldog',
+  'poodle',
+  'akitas',
+  'setter',
   'collie',
   'chihuahua',
+  'boxer',
+  'pug',
+  'papillon',
+  'wolfhound',
+  'persian',
+  'bengal',
+  'birman',
+  'sphynx',
+  'himalayan',
 ];
-
-export const explaininglegs = ['short-legged', 'long-legged', ''];
 
 export const colors = [
   'red',
@@ -81,7 +91,7 @@ export const colors = [
   'gold',
 ];
 
-export const explainingBodies = ['haired', 'eyed', ''];
+export const explainingBodies = ['-haired', '-eyed', ''];
 
 export const names = [
   'Abby',

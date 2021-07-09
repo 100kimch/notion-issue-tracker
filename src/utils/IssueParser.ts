@@ -9,7 +9,7 @@ import {
   names,
   sizes,
 } from '../constants';
-import { CustomIssue, Issue, Tag } from '../models/custom';
+import { CustomComment, CustomIssue, Issue, Tag } from '../models/custom';
 import { Notion } from '../models/notion';
 
 /**
@@ -50,12 +50,13 @@ export class IssueParser {
             this.prefixes.some((prefix) => {
               if (prefix[1].test(cur)) {
                 tag = {
-                  id: 'Hello',
+                  id: this.createName(),
                   pageId: null,
                   lineNum: i + 1,
                   type: prefix[0],
                   description: cur.replace(prefix[1], ''),
                 };
+                document.lineAt;
                 return true;
               }
               return false;
@@ -77,10 +78,10 @@ export class IssueParser {
   }
 
   /**
-   * a function which makes a pet name with description for using an id.
-   * @returns
+   * a function which makes a pet name with description to be used as an id.
+   * @returns a random pet name with description
    */
-  public static getName() {
+  public static createName(): string {
     const timeVal = Math.floor(new Date().getTime() / 1000) % this.timeMask;
     const nums = [];
     let selectedId;
@@ -93,12 +94,45 @@ export class IssueParser {
       selectedId = Math.floor(selectedId / this.lengths[i]);
     }
 
-    console.log('picked: ', nums);
+    console.debug('picked: ', nums);
     return `${names[nums.pop()!]}, a${sizes[nums.pop()!]} ${
       adjectives[nums.pop()!]
     } ${colors[nums.pop()!]}${explainingBodies[nums.pop()!]} ${
       breeds[nums.pop()!]
     }`;
+  }
+
+  public static createComment(
+    body: string | vscode.MarkdownString,
+    mode: vscode.CommentMode,
+    author: vscode.CommentAuthorInformation,
+    parent?: vscode.CommentThread,
+    contextValue?: string,
+  ): CustomComment {
+    return {
+      id: this.createName(),
+      body,
+      mode,
+      author,
+      parent,
+      contextValue,
+    };
+  }
+
+  public static replyNote(reply: vscode.CommentReply) {
+    const thread = reply.thread;
+    const newComment = this.createComment(
+      reply.text,
+      vscode.CommentMode.Preview,
+      { name: 'vscode' },
+      thread,
+      thread.comments.length ? 'canDelete' : undefined,
+    );
+    if (thread.contextValue === 'draft') {
+      newComment.label = 'pending';
+    }
+
+    thread.comments = [...thread.comments, newComment];
   }
 
   /**

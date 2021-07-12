@@ -22,6 +22,19 @@
 	"contributes": {
 		"commands": [
 			{
+				"title": "NotionIssueTracker: Create Note",
+				"command": "notion-issue-tracker.createNote",
+				"enablement": "!commentIsEmpty"
+			},
+			{
+				"command": "mywiki.editNote",
+				"title": "Edit",
+				"icon": {
+					"dark": "resources/edit_inverse.svg",
+					"light": "resources/edit.svg"
+				}
+			},
+			{
 				"title": "NotionIssueTracker: Say Hello World",
 				"command": "notion-issue-tracker.helloWorld"
 			},
@@ -107,6 +120,38 @@
                     ]
                 }
 			}
+		},
+		"menus": {
+			"commandPalette": [
+				{
+					"command": "notion-issue-tracker.createNote",
+					"when": "false"
+				}
+			],
+			"comments/comment/title": [
+				{
+					"command": "notion-issue-tracker.editNote",
+					"group": "group@1",
+					"when": "commentController == notion-issue-tracker-comments"
+				}
+			],
+			"comments/commentThread/context": [
+				{
+					"command": "notion-issue-tracker.createNote",
+					"group": "inline",
+					"when": "commentController == notion-issue-tracker-comments && commentThreadIsEmpty"
+				},
+				{
+					"command": "notion-issue-tracker.startDraft",
+					"group": "inline",
+					"when": "commentController == comment-sample && commentThreadIsEmpty"
+				},
+				{
+					"command": "notion-issue-tracker.finishDraft",
+					"group": "inline",
+					"when": "commentController == comment-sample && commentThread == draft"
+				}
+			]
 		}
 	},
 	"scripts": {

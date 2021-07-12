@@ -25,7 +25,7 @@ interface Contributions {
   ];
 }
 
-export class Parser {
+export class CommentParser {
   private tags: CommentTag[] = [];
   private expression: string = '';
 

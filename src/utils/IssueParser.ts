@@ -1,4 +1,17 @@
-import * as vscode from 'vscode';
+import {
+  CancellationToken,
+  CommentAuthorInformation,
+  CommentController,
+  CommentMode,
+  CommentReply,
+  comments,
+  CommentThread,
+  MarkdownString,
+  Position,
+  Range,
+  TextDocument,
+  window,
+} from 'vscode';
 
 import * as API from '../apis';
 import {
@@ -23,24 +36,61 @@ import { Notion } from '../models/notion';
  * @constant timeMask - sum of the lengths constant
  */
 export class IssueParser {
-  private static prefixes = [
+  private prefixes = [
     ['todo', /^\s*\/\/\s*TODO\s*/i],
     ['should', /^\s*\/\/\s*SHOULD\s*/i],
     ['must', /^\s*\/\/\s*MUST\s*/i],
     ['note', /^\s*\/\/\s*NOTE\s*/i],
   ] as [string, RegExp][];
-  private static mW = 123456789;
-  private static mZ = 987654321;
-  private static mask = 0xffffffff;
-  private static lengths = [21, 3, 25, 25, 10, 500];
-  private static timeMask = 196875000;
+  private mW: number;
+  private mZ: number;
+  private mask: number;
+  private lengths: number[];
+  private timeMask: number;
+  private timeVal: number;
+  private commentController: CommentController;
+  private commentRange: Range[] = [];
+  public parsedLineCount: number;
 
-  public static parseTags(document: vscode.TextDocument): Issue[] {
+  constructor() {
+    this.mW = 123456789;
+    this.mZ = 987654321;
+    this.mask = 0xffffffff;
+    this.lengths = [21, 3, 25, 25, 10, 500];
+    this.timeMask = 196875000;
+    this.timeVal = Math.floor(new Date().getTime() / 1000) % this.timeMask;
+    this.commentController = comments.createCommentController(
+      'notion-issue-tracker-comments',
+      'Notion Issue Tracker - Comments',
+    );
+    this.parsedLineCount = 0;
+
+    this.commentController.commentingRangeProvider = {
+      provideCommentingRanges: (
+        document: TextDocument,
+        token: CancellationToken,
+      ) => {
+        return this.commentRange;
+      },
+    };
+  }
+
+  public dispose() {
+    this.commentController.dispose();
+  }
+
+  /**
+   * find every comments starting with tag prefixes & add ranges of them to commentRange
+   * @param document - contents where comments include.
+   * @returns {Issue[]}
+   */
+  public parseTags(document: TextDocument, force?: boolean): Issue[] {
     if (
+      (document.lineCount !== this.parsedLineCount || force) &&
       document.languageId === 'typescript' &&
       document.uri.scheme === 'file'
     ) {
-      console.log('languageId: ', document.languageId, document.uri.scheme);
+      let newRange: Range[] = [];
       let context = document
         .getText()
         .split('\n')
@@ -56,7 +106,7 @@ export class IssueParser {
                   type: prefix[0],
                   description: cur.replace(prefix[1], ''),
                 };
-                document.lineAt;
+                newRange.push(new Range(i, 0, i, 0));
                 return true;
               }
               return false;
@@ -64,6 +114,8 @@ export class IssueParser {
           }
           return tag ? acc.concat(tag) : acc;
         }, [] as Issue[]);
+      this.commentRange = newRange;
+      this.parsedLineCount = document.lineCount;
       console.log('context: ', context);
       return context;
     } else {
@@ -71,7 +123,7 @@ export class IssueParser {
     }
   }
 
-  public static parseCustomIssue(
+  public parseCustomIssue(
     response: Notion.Page.Response<CustomIssue.Response>,
   ) {
     return;
@@ -81,12 +133,12 @@ export class IssueParser {
    * a function which makes a pet name with description to be used as an id.
    * @returns a random pet name with description
    */
-  public static createName(): string {
-    const timeVal = Math.floor(new Date().getTime() / 1000) % this.timeMask;
+  public createName(): string {
+    this.timeVal = (this.timeVal + 1) % this.timeMask;
     const nums = [];
     let selectedId;
 
-    this.seed(timeVal);
+    this.seed(this.timeVal);
     selectedId = Math.floor(this.random() * this.timeMask);
 
     for (let i in this.lengths) {
@@ -102,11 +154,11 @@ export class IssueParser {
     }`;
   }
 
-  public static createComment(
-    body: string | vscode.MarkdownString,
-    mode: vscode.CommentMode,
-    author: vscode.CommentAuthorInformation,
-    parent?: vscode.CommentThread,
+  public createComment(
+    body: string | MarkdownString,
+    mode: CommentMode,
+    author: CommentAuthorInformation,
+    parent?: CommentThread,
     contextValue?: string,
   ): CustomComment {
     return {
@@ -119,11 +171,12 @@ export class IssueParser {
     };
   }
 
-  public static replyNote(reply: vscode.CommentReply) {
+  public replyNote(reply: CommentReply) {
+    console.log('reply: ', reply);
     const thread = reply.thread;
     const newComment = this.createComment(
       reply.text,
-      vscode.CommentMode.Preview,
+      CommentMode.Preview,
       { name: 'vscode' },
       thread,
       thread.comments.length ? 'canDelete' : undefined,
@@ -139,7 +192,7 @@ export class IssueParser {
    * a seed function for a random number
    * @param i a seed for a random number sequence
    */
-  public static seed(i: number) {
+  public seed(i: number) {
     this.mW = (123456789 + i) & this.mask;
     this.mZ = (987654321 - i) & this.mask;
   }
@@ -148,7 +201,7 @@ export class IssueParser {
    * a random number generating function
    * @returns a decimal number between 0 and 1
    */
-  public static random(): number {
+  public random(): number {
     this.mZ = (36969 * (this.mZ & 65535) + (this.mZ >> 16)) & this.mask;
     this.mW = (18000 * (this.mW & 65535) + (this.mW >> 16)) & this.mask;
     var result = ((this.mZ << 16) + (this.mW & 65535)) >>> 0;
@@ -156,16 +209,16 @@ export class IssueParser {
     return result;
   }
 
-  public static getContext(): string {
-    const editor = vscode.window.activeTextEditor;
+  public getContext(): string {
+    const editor = window.activeTextEditor;
     if (editor) {
       const activeLine = editor.document.lineAt(editor.selection.start.line);
 
       const editingIndex = activeLine.text.lastIndexOf('(');
       const editingRange =
         editingIndex !== -1
-          ? new vscode.Range(
-              new vscode.Position(activeLine.lineNumber, editingIndex),
+          ? new Range(
+              new Position(activeLine.lineNumber, editingIndex),
               activeLine.range.end,
             )
           : activeLine.range.end;
@@ -179,15 +232,15 @@ export class IssueParser {
     }
   }
 
-  public static getIdPosition(): vscode.Position | vscode.Range | null {
-    const editor = vscode.window.activeTextEditor;
+  public getIdPosition(): Position | Range | null {
+    const editor = window.activeTextEditor;
     if (editor) {
       const activeLine = editor.document.lineAt(editor.selection.start.line);
 
       const editingIndex = activeLine.text.lastIndexOf('(');
       if (editingIndex !== -1) {
-        return new vscode.Range(
-          new vscode.Position(activeLine.lineNumber, editingIndex),
+        return new Range(
+          new Position(activeLine.lineNumber, editingIndex),
           activeLine.range.end,
         );
       } else {
@@ -197,9 +250,9 @@ export class IssueParser {
     return null;
   }
 
-  public static async createLive(): Promise<string | null> {
+  public async createLive(): Promise<string | null> {
     return new Promise(async (resolve, reject) => {
-      const editor = vscode.window.activeTextEditor;
+      const editor = window.activeTextEditor;
 
       const idPosition = this.getIdPosition();
 
@@ -216,7 +269,7 @@ export class IssueParser {
     });
   }
 
-  public static async create(tags: Tag[]): Promise<string | null> {
+  public async create(tags: Tag[]): Promise<string | null> {
     return new Promise(async (resolve, reject) => {
       tags.forEach(async (tag) => {
         try {

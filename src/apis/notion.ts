@@ -1,10 +1,10 @@
 import Axios from 'axios';
 
-import { notion } from '../config';
+import config, { notion } from '../config';
+import { Issue } from '../models/custom';
 
-import type { Notion } from '../models/notion';
+// import type { Notion } from '../models/notion';
 import type { CustomIssue } from '../models/custom';
-
 export default {
   sayHello: async (delay = 1000) =>
     await new Promise((resolve) => {
@@ -38,6 +38,37 @@ export default {
             },
           }),
         );
+      } catch (e) {
+        reject(e);
+      }
+    }),
+  postIssue: async (issues: Issue[]): Promise<string> =>
+    await new Promise(async (resolve, reject) => {
+      try {
+        resolve(
+          await Axios.post(
+            notion.url + '/pages/',
+            new Issue.Request(issues[0], config.notion.databaseId),
+            {
+              headers: {
+                Authorization: notion.authorization,
+                'Content-Type': 'application/json',
+                'Notion-Version': notion.version,
+              },
+            },
+          ),
+        );
+        // resolve(
+        //   await Promise.all(issues.map(async issue => {
+        //     return await Axios.post(notion.url + '/pages/', new Notion.  issue, {
+        //       headers: {
+        //         Authorization: notion.authorization,
+        //         'Content-Type': 'application/json',
+        //         'Notion-Version': notion.version,
+        //       },
+        //     }),
+        //   }))
+        // );
       } catch (e) {
         reject(e);
       }

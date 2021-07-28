@@ -8,6 +8,8 @@ import {
 
 import { Notion } from './notion';
 
+import { IssueParser } from '../utils/IssueParser';
+
 export interface Tag {
   lineNum: number;
   type: string;
@@ -17,26 +19,35 @@ export interface Tag {
 export interface Issue {
   id: string;
   pageId: string | null;
+  filePath: string;
   lineNum: number;
   type: string;
-  description: string;
+  title: string;
+  description: string | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export namespace Issue {
-  export interface Request {
-    parent: {
-      database_id: string;
-    },
-    properties: {}
-    children: []
-  }
+  // class Request {
+  // // export class Request implements Notion.Database.Request<IssueParser, string[]> {
+  //   // parent: { database_id: string; };
+  //   public properties: Issue;
+  //   // children: string[];
+  //   constructor(data: Issue, databaseId: string) {
+  //     // this.parent = { database_id: databaseId };
+  //     this.properties = data;
+  //     // this.children = [data.description ?? ''];
+      
+  //     return { ...this };
+  //   }
+  // }
 
   export type Response = Notion.Page;
 }
 
 export interface CustomIssue extends Issue {
   type: 'todo' | 'should' | 'must' | 'note';
-  title: string;
   checked: boolean;
   comment?: CustomComment;
 }

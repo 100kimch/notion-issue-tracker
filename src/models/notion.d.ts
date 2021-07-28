@@ -168,4 +168,14 @@ export namespace Notion {
       }
     }
   }
+
+  export namespace Database {
+    export interface Request<T, U=any[]> {
+      parent?: {
+        database_id: string;
+      },
+      properties?: T;
+      children?: U;
+    }
+  }
 }

@@ -1,8 +1,10 @@
 // The module 'vscode' contains the VS Code extensibility API
 import {
+  CancellationToken,
   commands,
   CommentMode,
   CommentReply,
+  comments,
   CommentThread,
   CommentThreadCollapsibleState,
   CompletionItem,
@@ -11,6 +13,7 @@ import {
   languages,
   MarkdownString,
   SnippetString,
+  TextDocument,
   TextEditor,
   window,
   workspace,
@@ -25,8 +28,11 @@ import { IssueParser } from './utils/IssueParser';
 export function activate(context: ExtensionContext) {
   const output = window.createOutputChannel('Notion Issue Tracker');
   const codelensProvider = new CodeLensProvider();
-  const commentParser = new BetterCommentParser();
-  const issueParser = new IssueParser();
+  const betterCommentParser = new BetterCommentParser();
+  // const commentController = comments.createCommentController(
+  //   'notion-issue-tracker-comments',
+  //   'Notion Issue Tracker - Comments',
+  // );
   let activeEditor: TextEditor;
   let timeout: NodeJS.Timer;
 
@@ -34,9 +40,15 @@ export function activate(context: ExtensionContext) {
     'Notion Issue Tracker\n\tv0.1.0\n\thttps://github.com/100kimch/notion-issue-tracker',
   );
 
+  IssueParser.init(workspace.asRelativePath);
+
+  // commentController.commentingRangeProvider = {
+  //   provideCommentingRanges: () => IssueParser.commentRange,
+  // };
+
   const getTags = () => {
     if (!activeEditor) return;
-    if (!commentParser.supportedLanguage) return;
+    if (!betterCommentParser.supportedLanguage) return;
 
     console.log('getTags() executed');
   };
@@ -56,8 +68,33 @@ export function activate(context: ExtensionContext) {
     activeEditor = window.activeTextEditor;
 
     // Set the regex patterns for the specified language's comments
-    commentParser.SetRegex(activeEditor.document.languageId);
-    issueParser.parseTags(activeEditor.document);
+    betterCommentParser.SetRegex(activeEditor.document.languageId);
+    IssueParser.parseTags(activeEditor.document);
+    // IssueParser.replyNote({
+    //   text: '# Hello!!\n This is test version.',
+    //   thread: commentController.createCommentThread(
+    //     activeEditor.document.uri,
+    //     IssueParser.commentRange[1],
+    //     [],
+    //   ),
+    // });
+    // IssueParser.replyNote({
+    //   text: 'Note text',
+    //   thread: commentController.createCommentThread(
+    //     activeEditor.document.uri,
+    //     IssueParser.commentRange[0],
+    //     [
+    //       {
+    //         contextValue: 'Hello!',
+    //         body: 'Hello World!',
+    //         mode: 1,
+    //         author: {
+    //           name: '100kimch',
+    //         },
+    //       },
+    //     ],
+    //   ),
+    // });
 
     // Trigger first update of decorators
     triggerGetTags();
@@ -70,7 +107,7 @@ export function activate(context: ExtensionContext) {
       activeEditor = editor;
 
       // Set regex for updated language
-      commentParser.SetRegex(editor.document.languageId);
+      betterCommentParser.SetRegex(editor.document.languageId);
 
       // Trigger update to set decorations for newly active file
       triggerGetTags();
@@ -80,10 +117,10 @@ export function activate(context: ExtensionContext) {
   workspace.onDidChangeTextDocument(
     (event) => {
       if (activeEditor && event.document === activeEditor.document) {
-        console.log('changing...', new Date().getTime(), event.document);
+        // console.log('changing...', new Date().getTime(), event.document);
         triggerGetTags();
       }
-      issueParser.parseTags(event.document);
+      IssueParser.parseTags(event.document);
     },
     null,
     context.subscriptions,
@@ -92,7 +129,7 @@ export function activate(context: ExtensionContext) {
   workspace.onDidSaveTextDocument(async (document) => {
     console.log(
       'final result:',
-      issueParser.parseTags(document, true),
+      IssueParser.parseTags(document, true),
       // await IssueParser.create(IssueParser.parseTags(document)),
     );
   });
@@ -100,7 +137,6 @@ export function activate(context: ExtensionContext) {
   languages.registerCodeLensProvider('*', codelensProvider);
 
   context.subscriptions.push(
-    issueParser,
     languages.registerCompletionItemProvider('typescript', {
       provideCompletionItems(document, position) {
         const ret: CompletionItem[] = [];
@@ -192,7 +228,7 @@ export function activate(context: ExtensionContext) {
     commands.registerCommand(
       'notion-issue-tracker.addIssue',
       async (args: any) => {
-        window.showInformationMessage(issueParser.getContext());
+        window.showInformationMessage(IssueParser.getContext());
       },
     ),
 
@@ -201,14 +237,14 @@ export function activate(context: ExtensionContext) {
       (reply: CommentReply) => {
         console.log('reply on createNote(): ', reply);
 
-        issueParser.replyNote(reply);
+        IssueParser.replyNote(reply);
       },
     ),
 
     commands.registerCommand(
       'notion-issue-tracker.replyNote',
       (reply: CommentReply) => {
-        issueParser.replyNote(reply);
+        IssueParser.replyNote(reply);
       },
     ),
 
@@ -217,7 +253,7 @@ export function activate(context: ExtensionContext) {
       (reply: CommentReply) => {
         const thread = reply.thread;
         thread.contextValue = 'draft';
-        const newComment = issueParser.createComment(
+        const newComment = IssueParser.createComment(
           reply.text,
           CommentMode.Preview,
           { name: 'vscode' },
@@ -240,7 +276,7 @@ export function activate(context: ExtensionContext) {
         thread.contextValue = undefined;
         thread.collapsibleState = CommentThreadCollapsibleState.Collapsed;
         if (reply.text) {
-          const newComment = issueParser.createComment(
+          const newComment = IssueParser.createComment(
             reply.text,
             CommentMode.Preview,
             { name: 'vscode' },

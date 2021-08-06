@@ -22,17 +22,59 @@
 	"contributes": {
 		"commands": [
 			{
-				"title": "NotionIssueTracker: Create Note",
+				"title": "Create A Notion Issue",
 				"command": "notion-issue-tracker.createNote",
 				"enablement": "!commentIsEmpty"
 			},
 			{
-				"command": "mywiki.editNote",
-				"title": "Edit",
+				"title": "Edit issue",
+				"command": "notion-issue-tracker.editNote",
 				"icon": {
 					"dark": "resources/edit_inverse.svg",
 					"light": "resources/edit.svg"
 				}
+			},
+{
+				"command": "notion-issue-tracker.replyNote",
+				"title": "Reply",
+				"enablement": "!commentIsEmpty"
+			},
+			{
+				"command": "notion-issue-tracker.deleteNote",
+				"title": "Delete",
+				"icon": {
+					"dark": "resources/close_inverse.svg",
+					"light": "resources/close.svg"
+				}
+			},
+			{
+				"command": "notion-issue-tracker.deleteNoteComment",
+				"title": "Delete",
+				"icon": {
+					"dark": "resources/close_inverse.svg",
+					"light": "resources/close.svg"
+				}
+			},
+			{
+				"command": "notion-issue-tracker.saveNote",
+				"title": "Save"
+			},
+			{
+				"command": "notion-issue-tracker.cancelsaveNote",
+				"title": "Cancel"
+			},
+			{
+				"command": "notion-issue-tracker.startDraft",
+				"title": "Start Draft",
+				"enablement": "!commentIsEmpty"
+			},
+			{
+				"command": "notion-issue-tracker.finishDraft",
+				"title": "Finish Draft"
+			},
+			{
+				"command": "notion-issue-tracker.dispose",
+				"title": "Remove All Notes"
 			},
 			{
 				"title": "NotionIssueTracker: Say Hello World",
@@ -126,13 +168,25 @@
 				{
 					"command": "notion-issue-tracker.createNote",
 					"when": "false"
+				},
+				{
+					"command": "notion-issue-tracker.replyNote",
+					"when": "false"
+				},
+				{
+					"command": "notion-issue-tracker.deleteNote",
+					"when": "false"
+				},
+				{
+					"command": "notion-issue-tracker.deleteNoteComment",
+					"when": "false"
 				}
 			],
-			"comments/comment/title": [
+			"comments/commentThread/title": [
 				{
-					"command": "notion-issue-tracker.editNote",
-					"group": "group@1",
-					"when": "commentController == notion-issue-tracker-comments"
+					"command": "notion-issue-tracker.deleteNote",
+					"group": "navigation",
+					"when": "commentController == notion-issue-tracker-comments && !commentThreadIsEmpty"
 				}
 			],
 			"comments/commentThread/context": [
@@ -144,12 +198,36 @@
 				{
 					"command": "notion-issue-tracker.startDraft",
 					"group": "inline",
-					"when": "commentController == comment-sample && commentThreadIsEmpty"
+					"when": "commentController == notion-issue-tracker-comments && commentThreadIsEmpty"
 				},
 				{
 					"command": "notion-issue-tracker.finishDraft",
 					"group": "inline",
-					"when": "commentController == comment-sample && commentThread == draft"
+					"when": "commentController == notion-issue-tracker-comments && commentThread == draft"
+				}
+			],
+			"comments/comment/title": [
+				{
+					"command": "notion-issue-tracker.editNote",
+					"group": "group@1",
+					"when": "commentController == notion-issue-tracker-comments"
+				},
+				{
+					"command": "notion-issue-tracker.deleteNoteComment",
+					"group": "group@2",
+					"when": "commentController == notion-issue-tracker-comments && comment == canDelete"
+				}
+			],
+			"comments/comment/context": [
+				{
+					"command": "notion-issue-tracker.cancelsaveNote",
+					"group": "inline@1",
+					"when": "commentController == notion-issue-tracker-comments"
+				},
+				{
+					"command": "notion-issue-tracker.saveNote",
+					"group": "inline@2",
+					"when": "commentController == notion-issue-tracker-comments"
 				}
 			]
 		}

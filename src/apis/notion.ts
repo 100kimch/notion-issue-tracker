@@ -2,9 +2,39 @@ import Axios from 'axios';
 
 import config, { notion } from '../config';
 import { Issue } from '../models/custom';
+import { Notion } from '../models/notion';
 
 // import type { Notion } from '../models/notion';
 import type { CustomIssue } from '../models/custom';
+
+const AxiosInstance = Axios.create({
+  baseURL: notion.url,
+  headers: {
+    'Content-Type': 'application/json',
+    'Notion-Version': notion.version,
+  },
+});
+
+AxiosInstance.interceptors.request.use(async (config) => {
+  if (notion.authorization) {
+    config.headers.common.Authorization = notion.authorization;
+  }
+  return config;
+});
+
+AxiosInstance.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    console.warn(
+      '[Axios] Error: ',
+      error.response && error.response.data && error.response.data.message,
+    );
+    return Promise.reject(error);
+  },
+);
+
 export default {
   sayHello: async (delay = 1000) =>
     await new Promise((resolve) => {
@@ -14,7 +44,7 @@ export default {
     }),
   getDatabase: async (): Promise<string> =>
     await new Promise(async (resolve, reject) => {
-      const a = await Axios.get(
+      const a = await Axios.get<Notion.Database.Response>(
         notion.url + '/databases/' + notion.databaseId,
         {
           headers: {
@@ -39,37 +69,31 @@ export default {
           }),
         );
       } catch (e) {
+        console.log('error: ', e);
         reject(e);
       }
     }),
   postIssue: async (issues: Issue[]): Promise<string> =>
     await new Promise(async (resolve, reject) => {
       try {
-        resolve(
-          await Axios.post(
-            notion.url + '/pages/',
-            new Issue.Request(issues[0], config.notion.databaseId),
-            {
-              headers: {
-                Authorization: notion.authorization,
-                'Content-Type': 'application/json',
-                'Notion-Version': notion.version,
+        console.log(
+          `trying: ${notion.url}`,
+          new Issue.Request(issues[0], config.notion.databaseId),
+        );
+        await Promise.all(
+          issues.map((issue) =>
+            AxiosInstance.post(
+              '/pages/',
+              new Issue.Request(issue, config.notion.databaseId),
+              {
+                withCredentials: true,
               },
-            },
+            ),
           ),
         );
-        // resolve(
-        //   await Promise.all(issues.map(async issue => {
-        //     return await Axios.post(notion.url + '/pages/', new Notion.  issue, {
-        //       headers: {
-        //         Authorization: notion.authorization,
-        //         'Content-Type': 'application/json',
-        //         'Notion-Version': notion.version,
-        //       },
-        //     }),
-        //   }))
-        // );
+        resolve('done');
       } catch (e) {
+        console.log('error: ', { ...e });
         reject(e);
       }
     }),

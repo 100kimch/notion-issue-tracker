@@ -1,10 +1,8 @@
 // The module 'vscode' contains the VS Code extensibility API
 import {
-  CancellationToken,
   commands,
   CommentMode,
   CommentReply,
-  comments,
   CommentThread,
   CommentThreadCollapsibleState,
   CompletionItem,
@@ -13,7 +11,6 @@ import {
   languages,
   MarkdownString,
   SnippetString,
-  TextDocument,
   TextEditor,
   window,
   workspace,

@@ -129,7 +129,7 @@ export class IssueParser {
                   lineNum: i + 1,
                   type: prefix[0],
                   title: cur.replace(prefix[1], ''),
-                  description: null,
+                  description: '## Hello!\n```text\nThis is test```\nGood!',
                   createdAt: new Date(),
                   updatedAt: new Date(),
                 };
@@ -161,19 +161,16 @@ export class IssueParser {
       IssueParser.commentRange = newRange;
       IssueParser.parsedLineCount = document.lineCount;
       console.log('context: ', context);
-      notion.postIssue(context);
+      notion
+        .postIssue(context)
+        .then((val) => console.log('val: ', val))
+        .catch((val) => console.log('error val:', val));
       IssueParser.init();
       IssueParser.issues = context;
       return context;
     } else {
       return [];
     }
-  }
-
-  public static parseCustomIssue(
-    response: Notion.Page.Response<CustomIssue.Response>,
-  ) {
-    return;
   }
 
   /**
